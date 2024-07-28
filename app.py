@@ -92,7 +92,8 @@ def handle_item_mutation():
     print("Mutation operation completed")  # Debug print
 
     response_details['message'] = 'Operation completed successfully'
-    return jsonify(response_details), 200
+    print(response_details)
+    return str(response_details), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7843)
