@@ -15,21 +15,25 @@ client = OpenAI(
   project= f"{PROJECT_ID}",
 )
 
+
 def item(search_result, item_input):
+    search_result.replace("\n", " ")
+    item_input.replace("\n", " ")
     messages = [
         {"role": "system", "content": 
 """
-Your mission is to validate if the search result is the item we looking for, only answer is "true" or "false".
+Your mission is to validate if the search result is the item we looking for, only answer is "true" or "false". If the **searching for** have "group_related": "default", then the "group_related" in **search result** can be anything.
 """},
         {"role": "user", "content": 
 f"""
-### Searching for:
-{str(item_input)}
+ ### Searching for:
+ {str(item_input)}
 
-### Search result:
-{str(search_result)}
+ ### Search result:
+ {str(search_result)}
 """}
         ]
+    # print(messages)
     # print('start find group')
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -38,4 +42,4 @@ f"""
     )
     # print('finish find group!')
     response_message = response.choices[0].message.content
-    return json.loads(response_message)
+    return response_message

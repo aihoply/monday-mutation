@@ -51,49 +51,58 @@ def handle_item_mutation():
     event_messages.append({'status': 'info', 'message': 'Start mutation flow'})
     print("Mutation flow started")  # Debug print
 
-    board_id = BOARD_IDS.get(board_related)
+    try:
+        board_id = BOARD_IDS.get(board_related)
 
-    event_messages.append({'status': 'info', 'message': 'Getting column format'})
-    columns_format = get_format.board_mongo(board_id=board_id, db=db_format, collection=board_related)
+        event_messages.append({'status': 'info', 'message': 'Getting column format'})
+        columns_format = get_format.board_mongo(board_id=board_id, db=db_format, collection=board_related)
 
-    event_messages.append({'status': 'info', 'message': 'Getting board group'})
-    board_groups = get_groups.board_mongo(board_id=board_id, db=db_format, collection=board_related)
+        event_messages.append({'status': 'info', 'message': 'Getting board group'})
+        board_groups = get_groups.board_mongo(board_id=board_id, db=db_format, collection=board_related)
 
-    event_messages.append({'status': 'info', 'message': 'Filling data'})
-    fill_data = fill_data_bot.fill_data_to_columns(columns_format=columns_format, data_input=values)
+        event_messages.append({'status': 'info', 'message': 'Filling data'})
+        fill_data = fill_data_bot.fill_data_to_columns(columns_format=columns_format, data_input=values)
 
-    event_messages.append({'status': 'info', 'message': 'Finding group'})
-    group_id = position_bot.find_group(board_groups, group_related)
+        event_messages.append({'status': 'info', 'message': 'Finding group'})
+        group_id = position_bot.find_group(board_groups, group_related)
 
-    columns, value_update, value_update_found = transform.transform_columns_to_graphql_format(fill_data)
+        columns, value_update, value_update_found = transform.transform_columns_to_graphql_format(fill_data)
 
-    if mutation_type == 'create':
-        event_messages.append({'status': 'info', 'message': 'Creating item'})
-        create_response = create.item(board_id=board_id, group_id=group_id['id'], item_name=item_name, column_values=columns)
-        response_details['create'] = create_response
+        if mutation_type == 'create':
+            event_messages.append({'status': 'info', 'message': 'Creating item'})
+            create_response = create.item(board_id=board_id, group_id=group_id['id'], item_name=item_name, column_values=columns)
+            response_details['create'] = create_response
 
-    elif mutation_type == 'modify':
-        event_messages.append({'status': 'info', 'message': 'Modifying item'})
-        item = search.item_summary(collection=board_related, query=f"{item_name} {group_related}")
-        match_item = validate_bot.item(search_result=str(item), item_input=f"item name: {item_name}\nboard: {board_related}\ngroup: {group_related}")
-        if match_item:
-            modify_response = modify.item(item_id=item['id'], board_id=board_id, column_values=columns)
-            response_details['modify'] = modify_response
-        else:
-            print("No exact item found, operation aborted")  # Debug print
-            response_details['error'] = 'Can not find exact item to modify, please modify manually.'
+        elif mutation_type == 'modify':
+            event_messages.append({'status': 'info', 'message': 'Modifying item'})
+            item = search.item_summary(collection=board_related, query=f"{item_name} {group_related}")
+            match_item = validate_bot.item(search_result=str(item), item_input=f"item name: {item_name}\nboard: {board_related}\ngroup: {group_related}")
+            print(match_item)
+            if match_item:
+                print("validate bot pass")
+                modify_response = modify.item(item_id=item['id'], board_id=board_id, column_values=columns)
+                response_details['modify'] = modify_response
+            else:
+                print("No exact item found, operation aborted")  # Debug print
+                response_details['error'] = 'Can not find exact item to modify, please modify manually.'
 
-    if value_update_found:
-        event_messages.append({'status': 'info', 'message': 'Adding an update'})
-        update_response = add.update(item_id=item['id'], body=value_update)
-        response_details['update'] = update_response
-    
-    event_messages.append({'status': 'success', 'message': 'Mutation completed'})
-    print("Mutation operation completed")  # Debug print
+        if value_update_found:
+            event_messages.append({'status': 'info', 'message': 'Adding an update'})
+            update_response = add.update(item_id=item['id'], body=value_update)
+            response_details['update'] = update_response
+        
+        event_messages.append({'status': 'success', 'message': 'Mutation completed'})
+        print("Mutation operation completed")  # Debug print
 
-    response_details['message'] = 'Operation completed'
+    except Exception as e:
+        error_message = str(e)
+        print(f"Error during mutation operation: {error_message}")  # Debug print
+        event_messages.append({'status': 'error', 'message': error_message})
+        response_details['error'] = error_message
+
+    response_details['status'] = 'Operation completed'
     print(response_details)
-    return str(response_details), 200
+    return {"message": str(response_details)}, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7843, debug=True)
