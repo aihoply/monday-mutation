@@ -38,4 +38,4 @@ f"""
     )
     # print('finish find group!')
     response_message = response.choices[0].message.content
-    return response_message
+    return json.loads(response_message)

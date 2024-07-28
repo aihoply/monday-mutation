@@ -76,7 +76,7 @@ def handle_item_mutation():
         event_messages.append({'status': 'info', 'message': 'Modifying item'})
         item = search.item_summary(collection=board_related, query=f"{item_name} {group_related}")
         match_item = validate_bot.item(search_result=str(item), item_input=f"item name: {item_name}\nboard: {board_related}\ngroup: {group_related}")
-        if match_item.lowercase == "true":
+        if match_item:
             modify_response = modify.item(item_id=item['id'], board_id=board_id, column_values=columns)
             response_details['modify'] = modify_response
         else:
