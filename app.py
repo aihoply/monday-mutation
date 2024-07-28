@@ -91,7 +91,7 @@ def handle_item_mutation():
     event_messages.append({'status': 'success', 'message': 'Mutation completed'})
     print("Mutation operation completed")  # Debug print
 
-    response_details['message'] = 'Operation completed successfully'
+    response_details['message'] = 'Operation completed'
     print(response_details)
     return str(response_details), 200
 
